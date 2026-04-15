@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trinity Lutheran College Portal</title>
+    <style>
+        :root { --primary: #2c3e50; --secondary: #3498db; --bg: #f4f7f6; --success: #27ae60; --warning: #e67e22; }
+
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 700px; text-align: center; border-top: 5px solid var(--secondary); }
+        .hidden { display: none; }
+
+        input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+        button { width: 95%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; 
+
+background: white; }
+        th, td { border: 1px solid #dfe6e9; padding: 10px; text-align: left; font-size: 13px; }
+        th { background-color: #f8f9fa; }
+        .student-list-container { max-height: 350px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
+        .student-item { padding: 12px; border-bottom: 1px solid #eee; 
+
+cursor: pointer; text-align: left; }
+        .student-item:hover { background: #f0f7ff; }
+        .error-msg { color: #e74c3c; font-weight: bold; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="page1">
+        <h1>Trinity Lutheran 
+
+College</h1>
+        <p>Gambella, Ethiopia | Main Campus</p>
+        <hr>
+        <div style="margin-top:20px;">
+            <input type="email" id="mainEmail" placeholder="Enter Authorized College Email" autocomplete="off">
+            <input type="password" id="mainPass" placeholder="Enter Access 
+
+Password" autocomplete="off">
+            <div id="mainError" class="error-msg hidden">Error: Only the official college email is authorized.</div>
+            <button onclick="checkGate1()">Login to Directory</button>
+        </div>
+    </div>
+
+    <div id="page2" class="hidden">
+
+        <h2>Select Academic Stream</h2>
+        <div style="display:flex; gap:15px; justify-content:center; margin:20px 0;">
+            <button style="background:var(--success);" onclick="setStream('Natural')">Natural Science</button>
+            <button style="background:var(--warning);" onclick="setStream('Social')"
+
+>Social Science</button>
+        </div>
+    </div>
+
+    <div id="page3" class="hidden">
+        <h3 id="dirTitle">Student Directory</h3>
+        <input type="text" id="stuSearch" placeholder="Search your name..." onkeyup="filterStudents()" style="background:#fffbe6;"
+
+>
+        <div class="student-list-container" id="studentList"></div>
+    </div>
+
+    <div id="page4" class="hidden">
+        <h3 id="targetStu">Student Login</h3>
+        <input type="text" id="stuUser" placeholder="Full Name">
+        <input type="password" 
+
+id="stuPass" placeholder="Password (e.g. 00tlc001)">
+        <div id="authError" class="error-msg hidden">Incorrect Name or Password.</div>
+        <button onclick="verifyStudent()">View Grade Report</button>
+        <button onclick="showPage('page3')" style="background:#bdc3c7;">Back to List</button>
+    </div>
+
+
+    <div id="page5" class="hidden">
+        <h2 id="reportName"></h2>
+        <p id="reportStream" style="color:var(--secondary); font-weight:bold;"></p>
+
+        <h4 style="text-align:left;">First Semester</h4>
+        <table>
+            
+
+<thead><tr><th>Course</th><th>Assign</th><th>Mid</th><th>Final</th><th>Total</th></tr></thead>
+            <tbody id="sem1Body"></tbody>
+        </table>
+
+        <h4 style="text-align:left; margin-top:20px;">Second Semester</h4>
+        <table>
+            
+
+<thead><tr><th>Course</th><th>Assign</th><th>Mid</th><th>Final</th><th>Total</th></tr></thead>
+            <tbody id="sem2Body"></tbody>
+        </table>
+        
+        <button onclick="location.reload()" style="background:var(--primary); margin-top:25px;">Logout</button>
+    </div>
+
+</div>
+
+<script>
+    // These are the only allowed credentials for Page 1
+    const ALLOWED_EMAIL = "trinitylutheran@outlook.com";
+    const ALLOWED_PASS = "freshman";
+    
+    let selectedStream = "";
+    let currentStudent = null;
+    let database = [];
+
+    function initDatabase() {
+        for(let i = 1; i <= 200; i++) {
+            let paddedNum = i.toString().padStart(3, '0');
+            database.push({
+                id: i,
+                name: i === 1 ? "Nhial Gach Tut" : "Student " + i,
+                pass: "00tlc" + paddedNum // Password format: 00tlc001 to 00tlc200
+            });
+        }
+
+    }
+    initDatabase();
+
+    function showPage(id) {
+        document.querySelectorAll('.card > div').forEach(div => div.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function checkGate1() {
+        const emailInput = 
+
+document.getElementById('mainEmail').value;
+        const passInput = document.getElementById('mainPass').value;
+        
+        // Strict check: only the outlook mail works
+        if(emailInput === ALLOWED_EMAIL && passInput === ALLOWED_PASS) {
+            showPage('page2');
+        } else {
+            
+
+document.getElementById('mainError').classList.remove('hidden');
+        }
+    }
+
+    function setStream(stream) {
+        selectedStream = stream;
+        document.getElementById('dirTitle').innerText = stream + " Science Students";
+        renderList(database);
+        showPage('page3');
+
+    }
+
+    function renderList(data) {
+        const listDiv = document.getElementById('studentList');
+        listDiv.innerHTML = "";
+        data.forEach(stu => {
+            let item = document.createElement('div');
+            item.className = 'student-item';
+            item.innerHTML = 
+
+`<strong>${stu.id}.</strong> ${stu.name}`;
+            item.onclick = () => {
+                currentStudent = stu;
+                document.getElementById('stuUser').value = stu.name;
+                document.getElementById('targetStu').innerText = "Security Check: " + stu.name;
+                showPage('page4');
+            };
+
+            listDiv.appendChild(item);
+        });
+    }
+
+    function filterStudents() {
+        let term = document.getElementById('stuSearch').value.toLowerCase();
+        let filtered = database.filter(s => s.name.toLowerCase().includes(term));
+        renderList(filtered);
+
+    }
+
+    function verifyStudent() {
+        const nameVal = document.getElementById('stuUser').value;
+        const passVal = document.getElementById('stuPass').value;
+        if(nameVal === currentStudent.name && passVal === currentStudent.pass) {
+            generateReport();
+            showPage('page5');
+
+        } else {
+            document.getElementById('authError').classList.remove('hidden');
+        }
+    }
+
+    function generateReport() {
+        document.getElementById('reportName').innerText = currentStudent.name;
+        
+
+document.getElementById('reportStream').innerText = "Stream: " + selectedStream;
+        
+        // Semester 1 Courses
+        let s1 = ["Math", "Psychology", "English", "Geography", "Economic", "Fitness", "Logic"];
+        if(selectedStream === "Natural") s1.splice(2, 0, "Physics");
+        document.getElementById('sem1Body').innerHTML = 
+
+s1.map(c => `<tr><td>${c}</td><td></td><td></td><td></td><td></td></tr>`).join('');
+
+        // Semester 2 Courses
+        let s2 = ["Anthropology", "Entrepreneur", "Global Trend", "Moral", "Inclusiveness", "Emerging Tech", "History"];
+        if(selectedStream === "Natural") {
+            s2.unshift("Biology");
+            s2.splice(6, 0, 
+
+"Chemistry");
+        }
+        document.getElementById('sem2Body').innerHTML = s2.map(c => `<tr><td>${c}</td><td></td><td></td><td></td><td></td></tr>`).join('');
+    }
+</script>
+</body>
+</html>
